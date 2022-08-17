@@ -5,7 +5,9 @@
 #include <mutex>
 #include <vector>
 #include <string>
+#include <fstream>
 using namespace std;
+static bool Keep = true;
 
 mutex m;
 class Film
@@ -14,6 +16,7 @@ class Film
 	string director;
 	string year;
 	string ganre;
+	string LOG;
 public:
 	string getName()const { return name; }
 	string getDirector()const { return director; }
@@ -67,6 +70,35 @@ public:
 		}
 		cout << "Film is missing.\n";
 		return 0;
+	}
+	void LoadFromFile()
+	{
+		string path = "Film.txt";
+		ifstream in(path);
+		
+		in >> name >> director >> year >> ganre;
+	}
+	void SaveToFile()
+	{
+		string path = "Film.txt";
+		ofstream out(path,ios::app);
+		while(Keep)
+		{
+			if (!out.is_open())
+			{
+				this_thread::sleep_for(chrono::milliseconds(1000));
+			}
+			else
+			{
+				string tmp;
+				LoadFromFile();
+				
+
+
+				this_thread::sleep_for(chrono::seconds(30));
+				out.close();
+			}
+		}
 	}
 };
 
@@ -217,4 +249,5 @@ int main()
 		}
 
 	} while (vvod != 27);
+	Keep = false;
 }
