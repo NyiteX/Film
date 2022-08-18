@@ -43,7 +43,7 @@ public:
 		cout << "Name: " << name << endl;
 		cout << "Director: " << director << endl;
 		cout << "Year: " << year << endl;
-		cout << "Ganre: " << ganre << endl << endl;
+		cout << "Ganre: " << ganre << endl;
 		m.unlock();
 	}
 	void PrintALL(const vector<Film>& A)
@@ -52,6 +52,7 @@ public:
 		{
 			cout << "~~~~~~~~~ " << i + 1 << " ~~~~~~~~~\n";
 			A[i].Print();
+			cout << endl;
 		}
 	}
 	int SearchByName(const vector<Film>& A)
@@ -71,34 +72,83 @@ public:
 		cout << "Film is missing.\n";
 		return 0;
 	}
-	void LoadFromFile()
+	void Load()
 	{
 		string path = "Film.txt";
 		ifstream in(path);
-		
-		in >> name >> director >> year >> ganre;
+		while (!in.is_open())
+		{
+			this_thread::sleep_for(chrono::milliseconds(1000));
+		}
+		while (!in.eof())
+		{
+			string temp;
+			getline(in, temp);
+			LOG += temp;
+			if (!in.eof())
+				LOG += '\n';
+		}
+		in.close();
+
 	}
-	void SaveToFile()
+	void SaveToFile(const vector<Film>& A)
 	{
 		string path = "Film.txt";
-		ofstream out(path,ios::app);
-		while(Keep)
+		ofstream out(path);
+		out.close();
+		while(Keep == true)
 		{
-			if (!out.is_open())
+			Load();
+			out.open(path);
+			while (!out.is_open())
 			{
 				this_thread::sleep_for(chrono::milliseconds(1000));
 			}
-			else
+			if(out.is_open())
 			{
-				string tmp;
-				LoadFromFile();
-				
-
-
-				this_thread::sleep_for(chrono::seconds(30));
+				string tmp;			
+				bool f = true;
+				for (int i = 0; i < A.size(); i++)
+				{					
+					tmp += "Name: ";
+					tmp += A[i].name;
+					tmp += "\n";
+					tmp += "Director: ";
+					tmp += A[i].director;
+					tmp += "\n";
+					tmp += "Year: ";
+					tmp += A[i].year;
+					tmp += "\n";
+					tmp += "Ganre: ";
+					tmp += A[i].ganre;
+					tmp += "\n";
+				}			
+				if(tmp.size()==LOG.size())
+				{
+					for (int i = 0; i < LOG.size(); i++)
+					{
+						if (tmp[i] != LOG[i])
+						{
+							f = false;
+							break;
+						}
+					}
+				}
+				if (tmp.size() != LOG.size() || f == false /*|| LOG.size()>0*/)
+				{
+					for (int i = 0; i < A.size(); i++)
+					{
+						out << "Name: " << A[i].name << endl;
+						out << "Director: " << A[i].director << endl;
+						out << "Year: " << A[i].year << endl;
+						out << "Ganre: " << A[i].ganre << endl;						
+					}
+				}
 				out.close();
+				LOG.clear();
+				this_thread::sleep_for(chrono::seconds(30));			
 			}
-		}
+		}	
 	}
 };
 
@@ -106,6 +156,7 @@ int main()
 {
 	vector<Film>A;
 	Film C;
+	thread t0(&Film::SaveToFile, C, ref(A));
 	char vvod;
 	do
 	{
@@ -250,4 +301,5 @@ int main()
 
 	} while (vvod != 27);
 	Keep = false;
+	t0.join();
 }
